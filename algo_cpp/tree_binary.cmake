@@ -1,9 +1,9 @@
 cmake_minimum_required      ( VERSION 3.12.0 )
 
-set                         ( PROJECT_NAME                       tree_fenwick )
+set                         ( PROJECT_NAME                       tree_binary )
 set                         ( INSTALLDIR                         ${BUILDDIR}/cpp/ )
-set                         ( SRC_FILES                          tree_fenwick.cpp )
-set                         ( INC_FILES                          )
+set                         ( SRC_FILES                          tree_main.cpp)
+set                         ( INC_FILES                          tree.hpp tree_binary.hpp)
 
 # compiler/linker flags
 string                      ( APPEND CMAKE_CXX_FLAGS             " /EHsc" )
