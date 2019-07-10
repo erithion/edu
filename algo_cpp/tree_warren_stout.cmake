@@ -1,9 +1,9 @@
 cmake_minimum_required      ( VERSION 3.12.0 )
 
-set                         ( PROJECT_NAME                       tree_binary )
+set                         ( PROJECT_NAME                       tree_warren_stout )
 set                         ( INSTALLDIR                         ${BUILDDIR}/cpp/ )
-set                         ( SRC_FILES                          tree_binary.cpp)
-set                         ( INC_FILES                          tree_binary.hpp)
+set                         ( SRC_FILES                          tree_warren_stout.cpp)
+set                         ( INC_FILES                          tree_binary.hpp tree_warren_stout.hpp)
 
 # compiler/linker flags
 string                      ( APPEND CMAKE_CXX_FLAGS             " /EHsc" )
