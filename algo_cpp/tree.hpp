@@ -18,10 +18,10 @@ struct node
 };
 
 namespace trees {
-    struct binary {};
+    struct manually_balanced {};
     struct avl {};
     struct red_black {};
 }
 
 template <typename T>
-using tree_binary = std::unique_ptr<node<T, trees::binary>>;
+using tree_binary = std::unique_ptr<node<T, trees::manually_balanced>>;
