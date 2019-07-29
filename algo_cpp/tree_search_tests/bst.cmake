@@ -1,9 +1,8 @@
 cmake_minimum_required      ( VERSION 3.12.0 )
 
-set                         ( PROJECT_NAME                       tree_fenwick )
-set                         ( INSTALLDIR                         ${BUILDDIR}/cpp/ )
-set                         ( SRC_FILES                          tree_fenwick.cpp )
-set                         ( INC_FILES                          )
+set                         ( PROJECT_NAME                       bst_tests )
+set                         ( INSTALLDIR                         ${BUILDDIR}/tree/search )
+set                         ( SRC_FILES                          bst.cpp)
 
 # compiler/linker flags
 string                      ( APPEND CMAKE_CXX_FLAGS             " /EHsc" )
@@ -13,14 +12,9 @@ message                     ( STATUS                             "CXX flags ${CM
 message                     ( STATUS                             "Linker flags ${CMAKE_SHARED_LINKER_FLAGS}" )
          
 project                     ( ${PROJECT_NAME} )
-
 include_directories         ( ${CMAKE_CURRENT_SOURCE_DIR} )
-     
-
-add_executable              ( ${PROJECT_NAME}                    ${SRC_FILES} 
-                                                                 ${INC_FILES} )
-
-target_link_libraries       ( ${PROJECT_NAME}                     )
-
+add_executable              ( ${PROJECT_NAME}                    ${SRC_FILES} )
+target_link_libraries       ( ${PROJECT_NAME}  lib                   )
+set_target_properties       ( ${PROJECT_NAME} PROPERTIES         FOLDER tree/search)
 install                     ( TARGETS                            ${PROJECT_NAME}                         
                               DESTINATION                        ${INSTALLDIR} )

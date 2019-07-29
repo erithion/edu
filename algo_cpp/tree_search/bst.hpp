@@ -1,8 +1,15 @@
 #include <memory>
 #include <vector>
 #include <functional>
+#include <type_traits>
 
-namespace bst {
+template<typename T>
+struct CTTI; // compile time type inspector; just generates a compile time error with a specified type T. Use:
+             //                CTTI<T> a; 
+             //                CTTI<decltype(t)> b;
+
+
+namespace tree_search {
     namespace aux {
         // Hiding 'node' to prevent template versions of 'insert', 'size', etc. from being discovered by ADL
         // To avoid the potential ambiguity they must be called either by qualified name or brought in to a new namespace with 'using'
