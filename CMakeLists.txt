@@ -8,5 +8,5 @@ else()
     message                     ( STATUS            "BUILDDIR = ${BUILDDIR}" )
 endif()
 
-add_subdirectory                ( algo_cpp )
-unset                           ( algo_cpp CACHE )
+add_subdirectory                ( src )
+unset                           ( src CACHE )
