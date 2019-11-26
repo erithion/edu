@@ -1,0 +1,288 @@
+\documentclass[12pt,titlepage]{article}
+\usepackage{amsmath}
+\usepackage{cancel}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{hidelinks,}
+
+\usepackage[latin1]{inputenc}
+
+\title{Notes on analytic gradient derivation for iris neural network}
+\author{Artyom Bondartsov}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+Having the iris dataset as input, we let $Sx$ be a set of 4-dimensional input vectors,
+\begin{center}
+$Sx=\begin{Bmatrix}
+ ..., & \begin{bmatrix}
+x_{1}\\ 
+\vdots\\
+x_{4} 
+
+\end{bmatrix},&... 
+\end{Bmatrix}$.
+\end{center}
+We denote $|Sx|$ to be the total number of such vectors in the set $Sx$. \\\\
+We also have a set $Sy$ of \emph{one-hot} vectors transformed from the iris dataset's result variable with three classes, 
+\begin{center}
+ $Sy=\begin{Bmatrix}
+ ..., & \begin{bmatrix}
+y_{1}\\ 
+y_{2}\\ 
+y_{3} 
+
+\end{bmatrix},&... 
+\end{Bmatrix}$.
+\end{center}
+Please note that although $|Sy|$ is never used in the derivation that follows, yet for the sake of clarity $|Sx|=|Sy|$.\\\\
+And finally we define a neural network as depicted in the figure below
+    
+
+\includegraphics{./iris.nn.png}
+\newpage
+In addition we define neural network's functions as below. Note that these functions are pretty standard for neural networks and given here only as a reminder. \\\\
+A sum of weighted inputs from the zero (input) layer that enters an arbitrary neuron
+	\begin{equation*} z_{i}^{(1)}=w_{i,0}^{(1)}+w_{i,1}^{(1)}x_{1}+...+w_{i,4}^{(1)}x_{4}, i \in [1,8].\end{equation*} 
+     \\Using dot product, in matrix notation for the entire layer it transforms into  
+      \begin{equation*}
+       \begin{split} 
+           \mathbf{z^{(1)}}&=\begin{bmatrix}
+           &w_{1,0}^{(1)} &w_{1,1}^{(1)} &\cdots &w_{1,4}^{(1)} \\ 
+           &\cdots &\cdots &\cdots &\cdots\\ 
+           &w_{8,0}^{(1)} &w_{8,1}^{(1)} &\cdots &w_{8,4}^{(1)} 
+       \end{bmatrix}
+       \begin{bmatrix}
+          1\\ 
+          x_{1}\\ 
+          \vdots \\ 
+          x_{4}\\ 
+       \end{bmatrix} \\
+       &=\mathbf{w^{(1)^{T}}}\cdot \mathbf{x}.
+       \end{split}
+       \end{equation*}
+A sigmoid function of an arbitrary neuron of the first layer
+    \begin{equation*} a_{i}^{(1)}=\frac{1}{1+e^{-z_{i}^{(1)}}}, i \in [1,8]. \end{equation*}
+A sum of weighted inputs from the first (hidden) layer that enters an arbitrary neuron
+    \begin{equation*} z_{i}^{(2)}=w_{i,0}^{(2)}+w_{i,1}^{(2)}a_{1}^{(1)}+...+w_{i,8}^{(2)}a_{8}^{(1)}, i \in [1,3]. \end{equation*}
+     \\Using dot product, in matrix notation for the entire layer it transforms into  
+       \begin{equation*}
+        \begin{split}
+           \mathbf{z^{(2)}}&=\begin{bmatrix}
+           &w_{1,0}^{(2)} &w_{1,1}^{(2)} &\cdots &w_{1,8}^{(2)} \\ 
+           &\cdots &\cdots &\cdots &\cdots\\ 
+           &w_{3,0}^{(2)} &w_{3,1}^{(2)} &\cdots &w_{3,8}^{(2)} 
+        \end{bmatrix}
+        \begin{bmatrix}
+          1\\ 
+          a_{1}^{(1)}\\ 
+          \vdots \\ 
+          a_{8}^{(1)}
+       \end{bmatrix}\\
+       &=\mathbf{w^{(2)^{T}}}\cdot \mathbf{a^{(1)}}.
+       \end{split}
+       \end{equation*}
+A sigmoid function of an arbitrary neuron of the second layer \begin{equation*} a_{i}^{(2)}=\frac{1}{1+e^{-z_{i}^{(2)}}}, i \in [1,3]. \end{equation*}
+And a cross entropy loss function
+\begin{equation} \label{loss} C=-\frac{1}{|Sx|}\sum_{Sx}\sum_{j=1}^{3}y_{j}\ln a_{j}^{(2)} + (1-y_{j})\ln (1-a_{j}^{(2)}). \end{equation}
+\\
+Finally, we are interested in obtainig a gradient of \eqref{loss} w.r.t. the weights. In particular we will be deriving
+\begin{align} \label{gradw2}
+\nabla_{w^{(2)}}C&=\begin{bmatrix}
+ \frac{\partial C}{\partial w_{1,0}^{(2)}}& \frac{\partial C}{\partial w_{1,1}^{(2)}} &\cdots &\frac{\partial C}{\partial w_{1,8}^{(2)}}\\ 
+ \cdots&\cdots&\cdots&\cdots \\
+ \frac{\partial C}{\partial w_{3,0}^{(2)}}& \frac{\partial C}{\partial w_{3,1}^{(2)}} &\cdots &\frac{\partial C}{\partial w_{3,8}^{(2)}}\\ 
+\end{bmatrix}\\ 
+\label{gradw1}
+ \nabla_{w^{(1)}}C&=\begin{bmatrix}
+ \frac{\partial C}{\partial w_{1,0}^{(1)}}& \frac{\partial C}{\partial w_{1,1}^{(1)}} &\cdots &\frac{\partial C}{\partial w_{1,4}^{(1)}}\\ 
+ \cdots&\cdots&\cdots&\cdots \\
+ \frac{\partial C}{\partial w_{8,0}^{(1)}}& \frac{\partial C}{\partial w_{8,1}^{(1)}} &\cdots &\frac{\partial C}{\partial w_{8,4}^{(1)}}\\ 
+\end{bmatrix}.
+\end{align}
+
+\newpage
+We will start from \eqref{gradw2}. Yet instead of calculating the gradient matrix in its entirety we are going to derive a partial derivative in general form first, namely $\frac{\partial C}{\partial w_{i,j}^{(2)}}$.\\ 
+In order to spot all parts of \eqref{loss} that depend on some arbitrary $w_{i,j}^{(2)}$ we will use a diagram that purposefully depicts only those dependencies\\
+\includegraphics{./iris.nn.w2.png}\\
+Thus applying the chain rule we arrive at the formula\\
+\begin{equation} \label{chain2}
+\begin{split}
+\frac{\partial C}{\partial w_{i,j}^{(2)}}&=\frac{\partial C}{\partial a_{i}^{(2)}}\frac{\partial a_{i}^{(2)}}{\partial z_{i}^{(2)}}\frac{\partial z_{i}^{(2)}}{\partial w_{i,j}^{(2)}}.
+\end{split}
+\end{equation}
+\\
+Now taking those partial derivatives independently we get
+
+\begin{subequations}
+\begin{align}
+ \frac{\partial C}{\partial a_{i}^{(2)}} 
+ &  = \frac{\partial }{\partial a_{i}^{(2)}}(-\frac{1}{|Sx|}\sum_{Sx}\sum_{j=1}^{3}y_{j}\ln a_{j}^{(2)} + (1-y_{j})\ln (1-a_{j}^{(2)})) \notag \\
+ & = -\frac{1}{|Sx|}\sum_{Sx}y_{i}\frac{1}{a_{i}^{(2)}}+(1-y_{i})\frac{1}{1-a_{i}^{(2)}}(-1) \notag \\
+ & =\frac{1}{|Sx|}\sum_{Sx}\frac{a_{i}^{(2)}-y_{i}}{a_{i}^{(2)}(1-a_{i}^{(2)})}. \label{der2:1}\\
+\frac{\partial a_{i}^{(2)}}{\partial z_{i}^{(2)}}
+&= \frac{\partial }{\partial z_{i}^{(2)}}\frac{1}{1+e^{-z_{i}^{(2)}}} \notag\\
+&=\frac{\partial }{\partial z_{i}^{(2)}}(1+e^{-z_{i}^{(2)}})^{-1} \notag\\
+&=-(1+e^{-z_{i}^{(2)}})^{-2}(-1)e^{-z_{i}^{(2)}} \notag\\
+&=\frac{e^{-z_{i}^{(2)}}}{(1+e^{-z_{i}^{(2)}})^{2}} \notag\\
+&=\frac{1+e^{-z_{i}^{(2)}}-1}{(1+e^{-z_{i}^{(2)}})^{2}} \notag\\
+&=\frac{\cancel{1+e^{-z_{i}^{(2)}}}}{(1+e^{-z_{i}^{(2)}})^{\cancel{2}}}-\frac{1}{(1+e^{-z_{i}^{(2)}})^{2}} \notag\\
+&=\frac{1}{1+e^{-z_{i}^{(2)}}}-\frac{1}{(1+e^{-z_{i}^{(2)}})^{2}} \notag\\
+&=a_{i}^{(2)}-(a_{i}^{(2)})^{2} \notag\\
+&=a_{i}^{(2)}(1-a_{i}^{(2)}). \label{der2:2}\\
+\frac{\partial z_{i}^{(2)}}{\partial w_{i,j}^{(2)}}
+&=\frac{\partial }{\partial w_{i,j}^{(2)}}(w_{i,0}^{(2)}+w_{i,1}^{(2)}a_{1}^{(1)}+...+w_{i,j}^{(2)}a_{j}^{(1)}+...+w_{i,8}^{(2)}a_{8}^{(1)}) \notag\\
+&=\left\{\begin{matrix} 1&, j=0\\ a_{j}^{(1)}&, j\neq 0. \end{matrix}\right. \label{der2:3}
+\end{align}
+\end{subequations}
+\\And finally combining \eqref{der2:1}, \eqref{der2:2} and \eqref{der2:3} together we obtain
+\begin{equation} \label{der2}
+\begin{split}
+\frac{\partial C}{\partial w_{i,j}^{(2)}}&=\frac{\partial C}{\partial a_{i}^{(2)}}\frac{\partial a_{i}^{(2)}}{\partial z_{i}^{(2)}}\frac{\partial z_{i}^{(2)}}{\partial w_{i,j}^{(2)}}\\
+&=\frac{1}{|Sx|}\sum_{Sx}\frac{a_{i}^{(2)}-y_{i}}{\cancel{a_{i}^{(2)}(1-a_{i}^{(2)})}}\cancel{a_{i}^{(2)}(1-a_{i}^{(2)})}\frac{\partial z_{i}^{(2)}}{\partial w_{i,j}^{(2)}}\\
+&=\frac{1}{|Sx|}\sum_{Sx}(a_{i}^{(2)}-y_{i})\left\{\begin{matrix} 1&, j=0\\ a_{j}^{(1)}&, j\neq 0 \end{matrix}\right.\\
+&=\left\{\begin{matrix} \frac{1}{|Sx|}\sum_{Sx}(a_{i}^{(2)}-y_{i})&, j=0\\ \frac{1}{|Sx|}\sum_{Sx}(a_{i}^{(2)}-y_{i})a_{j}^{(1)}&, j\neq 0. \end{matrix}\right.
+\end{split}
+\end{equation}
+Using \eqref{der2} our matrix gradient \eqref{gradw2} now takes the form
+\begin{equation} \label{gradw2f}
+\begin{split}
+\nabla_{w^{(2)}}C&=\begin{bmatrix}
+ \frac{\partial C}{\partial w_{1,0}^{(2)}}& \frac{\partial C}{\partial w_{1,1}^{(2)}} &\cdots &\frac{\partial C}{\partial w_{1,8}^{(2)}}\\ 
+ \cdots&\cdots&\cdots&\cdots \\
+ \frac{\partial C}{\partial w_{3,0}^{(2)}}& \frac{\partial C}{\partial w_{3,1}^{(2)}} &\cdots &\frac{\partial C}{\partial w_{3,8}^{(2)}}\\ 
+\end{bmatrix}\\ 
+&=\frac{1}{|Sx|}\begin{bmatrix}
+ \sum_{Sx}(a_{1}^{(2)}-y_{1}) &\sum_{Sx}(a_{1}^{(2)}-y_{1})a_{1}^{(1)}  &...  &\sum_{Sx}(a_{1}^{(2)}-y_{1})a_{8}^{(1)} \\ 
+ ...&...  &... &... \\ 
+ \sum_{Sx}(a_{3}^{(2)}-y_{3}) &\sum_{Sx}(a_{3}^{(2)}-y_{3})a_{1}^{(1)}  &...  &\sum_{Sx}(a_{3}^{(2)}-y_{3})a_{8}^{(1)}
+\end{bmatrix}.
+\end{split}
+\end{equation}
+\\
+In addition, \eqref{gradw2f} can also take a nice vectorized form using dot product
+\begin{equation} \label{gradw2f2}
+\begin{split}
+\nabla_{w^{(2)}}C&=\frac{1}{|Sx|}\begin{bmatrix}
+ a_{1,1}^{(2)}-y_{1,1}& \cdots &a_{1,|Sx|}^{(2)}-y_{1,|Sx|} \\ 
+ \cdots& \cdots &\cdots \\
+ a_{3,1}^{(2)}-y_{3,1}& \cdots &a_{3,|Sx|}^{(2)}-y_{1,|Sx|} \\
+\end{bmatrix}\begin{bmatrix}
+ 1& a_{1,1}^{(1)} & \cdots &a_{1,8}^{(1)} \\ 
+ \vdots& \vdots & \cdots & \vdots \\ 
+ 1& a_{|Sx|,1}^{(1)} & \cdots  & a_{|Sx|,8}^{(1)}
+\end{bmatrix}\\
+&=\frac{1}{|Sx|}(\mathbf{a^{(2)}}-\mathbf{y})\cdot\mathbf{a^{(1)^{T}}}.
+\end{split}
+\end{equation}
+\\Please note that $\mathbf{a^{(1)^{T}}}$ includes a bias first column.
+\newpage 
+In order to obtain \eqref{gradw1} we will use the same approach, i.e. we will derive a general formula of partial derivative, namely $\frac{\partial C}{\partial w_{i,j}^{(1)}}$. \\
+Once again we are going to employ graphical approach to spot all parts of \eqref{loss} that would get changed if some arbitrary $w_{i,j}^{(1)}$ was wiggled.\\
+\includegraphics{./iris.nn.w1.png}
+\\Thus according to the chain rule we have\\
+\begin{equation} \label{chain1}
+\begin{split}
+\frac{\partial C}{\partial w_{i,j}^{(1)}}
+&=\frac{\partial C}{\partial a_{1}^{(2)}}\frac{\partial a_{1}^{(2)}}{\partial z_{1}^{(2)}}\frac{\partial z_{1}^{(2)}}{\partial a_{i}^{(1)}}\frac{\partial a_{i}^{(1)}}{\partial z_{i}^{(1)}}\frac{\partial z_{i}^{(1)}}{\partial w_{i,j}^{(1)}}
++\frac{\partial C}{\partial a_{2}^{(2)}}\frac{\partial a_{2}^{(2)}}{\partial z_{2}^{(2)}}\frac{\partial z_{2}^{(2)}}{\partial a_{i}^{(1)}}\frac{\partial a_{i}^{(1)}}{\partial z_{i}^{(1)}}\frac{\partial z_{i}^{(1)}}{\partial w_{i,j}^{(1)}}\\
+&+\frac{\partial C}{\partial a_{3}^{(2)}}\frac{\partial a_{3}^{(2)}}{\partial z_{3}^{(2)}}\frac{\partial z_{3}^{(2)}}{\partial a_{i}^{(1)}}\frac{\partial a_{i}^{(1)}}{\partial z_{i}^{(1)}}\frac{\partial z_{i}^{(1)}}{\partial w_{i,j}^{(1)}}\\
+&=\left( \sum_{k=1}^{3}\frac{\partial C}{\partial a_{k}^{(2)}}\frac{\partial a_{k}^{(2)}}{\partial z_{k}^{(2)}}\frac{\partial z_{k}^{(2)}}{\partial a_{i}^{(1)}}\right )\frac{\partial a_{i}^{(1)}}{\partial z_{i}^{(1)}}\frac{\partial z_{i}^{(1)}}{\partial w_{i,j}^{(1)}}.
+\end{split}
+\end{equation}
+\\Let us recall that we have already carried out derivations for some of these partial derivatives. Specifically, $\frac{\partial C}{\partial a_{k}^{(2)}}$ is \eqref{der2:1} and $\frac{\partial a_{k}^{(2)}}{\partial z_{k}^{(2)}}$ is \eqref{der2:2}. Hence only 3 partial derivatives left, and one of them, $\frac{\partial a_{i}^{(1)}}{\partial z_{i}^{(1)}}$, is in fact \eqref{der2:2} with a different upper index.\\ 
+\begin{subequations}
+\begin{align}
+\frac{\partial z_{k}^{(2)}}{\partial a_{i}^{(1)}}
+ & = \frac{\partial }{\partial a_{i}^{(1)}}\left(w_{k,0}^{(2)}+w_{k,1}^{(2)}a_{1}^{(1)}+...+w_{k,i}^{(2)}a_{i}^{(1)}+...+w_{k,8}^{(2)}a_{8}^{(1)} \right )  \notag \\
+ & = w_{k,i}^{(2)}. \label{der1:1}\\
+\frac{\partial z_{i}^{(1)}}{\partial w_{i,j}^{(1)}}
+ & = \frac{\partial }{\partial w_{i,j}^{(1)}}\left(w_{i,0}^{(1)}+w_{i,1}^{(1)}x_{1}+...+w_{i,j}^{(1)}x_{j}+...+w_{i,4}^{(1)}x_{4} \right ) \notag \\
+ & =  \left\{\begin{matrix}
+1&, j = 0\\ 
+x_{j}&, j \neq 0
+\end{matrix}\right.. \label{der1:2}\\
+\frac{\partial a_{i}^{(1)}}{\partial z_{i}^{(1)}}
+ & =a_{i}^{(1)}(1-a_{i}^{(1)}). \label{der1:3}
+\end{align}
+\end{subequations}
+\\Now combining \eqref{der2:1}, \eqref{der2:2}, \eqref{der1:1}, \eqref{der1:2} and \eqref{der1:3} we have
+
+\begin{equation} \label{der1}
+\begin{split}
+\frac{\partial C}{\partial w_{i,j}^{(1)}}
+&=\left( \sum_{k=1}^{3}\frac{\partial C}{\partial a_{k}^{(2)}}\frac{\partial a_{k}^{(2)}}{\partial z_{k}^{(2)}}\frac{\partial z_{k}^{(2)}}{\partial a_{i}^{(1)}}\right )\frac{\partial a_{i}^{(1)}}{\partial z_{i}^{(1)}}\frac{\partial z_{i}^{(1)}}{\partial w_{i,j}^{(1)}}\\
+&=\left(\sum_{k=1}^{3} \frac{1}{|Sx|}\sum_{Sx} \frac{a_{k}^{(2)}-y_{k}}{\cancel{a_{k}^{(2)}(1-a_{k}^{(2)})}}\cancel{a_{k}^{(2)}(1-a_{k}^{(2)})}w_{k,i}^{(2)}\right )a_{i}^{(1)}(1-a_{i}^{(1)})\left\{\begin{matrix}
+1&, j = 0\\ 
+x_{j}&, j \neq 0
+\end{matrix}\right.\\
+&=\frac{1}{|Sx|}\sum_{Sx}\left(\sum_{k=1}^{3} (a_{k}^{(2)}-y_{k})w_{k,i}^{(2)}\right )a_{i}^{(1)}(1-a_{i}^{(1)})\left\{\begin{matrix}
+1&, j = 0\\ 
+x_{j}&, j \neq 0
+\end{matrix}\right.\\
+&=\left\{\begin{matrix}
+\frac{1}{|Sx|}\sum_{Sx}\left(\sum_{k=1}^{3} (a_{k}^{(2)}-y_{k})w_{k,i}^{(2)}\right )a_{i}^{(1)}(1-a_{i}^{(1)})&, j = 0\\ 
+\frac{1}{|Sx|}\sum_{Sx}\left(\sum_{k=1}^{3} (a_{k}^{(2)}-y_{k})w_{k,i}^{(2)}\right )a_{i}^{(1)}(1-a_{i}^{(1)})x_{j}&, j \neq 0
+\end{matrix}\right..
+\end{split}
+\end{equation}
+\\Before proceeding to the matrix gradient \eqref{gradw1} we are going to introduce some additional notation for the sake of simplicity. We will denote
+\begin{subequations}
+\begin{align}
+f_{i}^{(2)}&=\left(\sum_{k=1}^{3} (a_{k}^{(2)}-y_{k})w_{k,i}^{(2)}\right ), i \in [1,8] \label{den:1}\\
+g_{i}^{(1)}&=a_{i}^{(1)}(1-a_{i}^{(1)}), i \in [1,8]. \label{den:2}
+\end{align}
+\end{subequations}
+\\Using \eqref{den:1} and \eqref{den:2} the matrix gradient \eqref{gradw1} now takes the form
+\begin{align} \label{gradw1f}
+\nabla_{w^{(1)}}C
+&=\begin{bmatrix}
+ \frac{\partial C}{\partial w_{1,0}^{(1)}}& \frac{\partial C}{\partial w_{1,1}^{(1)}} &\cdots &\frac{\partial C}{\partial w_{1,4}^{(1)}}\\ 
+ \cdots&\cdots&\cdots&\cdots \\
+ \frac{\partial C}{\partial w_{8,0}^{(1)}}& \frac{\partial C}{\partial w_{8,1}^{(1)}} &\cdots &\frac{\partial C}{\partial w_{8,4}^{(1)}}\\ 
+ \end{bmatrix} \notag \\
+&=\frac{1}{|Sx|}\begin{bmatrix}
+ \sum_{Sx}g_{1}^{(1)}f_{1}^{(2)}&\sum_{Sx}g_{1}^{(1)}f_{1}^{(2)}x_{1}  &\cdots  &\sum_{Sx}g_{1}^{(1)}f_{1}^{(2)}x_{4} \\ 
+ \cdots & \cdots & \cdots & \cdots\\ 
+ \sum_{Sx}g_{8}^{(1)}f_{8}^{(2)}& \sum_{Sx}g_{8}^{(1)}f_{8}^{(2)}x_{1} & \cdots & \sum_{Sx}g_{8}^{(1)}f_{8}^{(2)}x_{4}. 
+\end{bmatrix}
+\end{align}
+\\In addition, \eqref{gradw1f} can also take a nice vectorized form using dot product
+\begin{equation} \label{gradw1f2}
+\begin{split}
+\nabla_{w^{(1)}}C
+&=\frac{1}{|Sx|}\begin{bmatrix}
+ g_{1,1}^{(1)}f_{1,1}^{(2)}& \cdots & g_{1,|Sx|}^{(1)}f_{1,|Sx|}^{(2)}\\ 
+ \cdots& \cdots & \cdots\\ 
+ g_{8,1}^{(1)}f_{8,1}^{(2)}& \cdots & g_{8,|Sx|}^{(1)}f_{8,|Sx|}^{(2)}
+\end{bmatrix}\cdot\begin{bmatrix}
+ 1& x_{1,1} & \cdots & x_{1,4}\\ 
+ \vdots& \vdots & \vdots & \vdots \\ 
+ 1& x_{|Sx|,1} & \cdots & x_{|Sx|,4}
+\end{bmatrix}\\
+&=\frac{1}{|Sx|}\left(\mathbf{g^{(1)}}\odot\mathbf{f^{(2)}} \right )\cdot \mathbf{x^{T}},
+\end{split}
+\end{equation}
+\\where $\odot$ is Hadamard (element-wise) product.
+\\\\Please note that $\mathbf{x^{T}}$ includes a bias first column. Heed that \eqref{den:1} can aslo be vectorized if needed
+\begin{equation}
+\begin{split}
+\mathbf{f^{(2)}}
+&=\begin{bmatrix}
+ a_{1,1}^{(2)}-y_{1,1}& \cdots & a_{1,3}^{(2)}-y_{1,3}\\ 
+ \cdots &\cdots  & \cdots\\ 
+ a_{|Sx|,1}^{(2)}-y_{|Sx|,1}& \cdots & a_{|Sx|,3}^{(2)}-y_{|Sx|,3}
+\end{bmatrix}
+\begin{bmatrix}
+ w_{1,1}^{(2)}& \cdots & w_{1,8}^{(2)}\\ 
+ \vdots& \vdots & \vdots\\ 
+ w_{3,1}^{(2)}& \cdots & w_{3,8}^{(2)}
+\end{bmatrix}\\
+&=(\mathbf{a^{(2)}-y})^{\textup{T}}\cdot\mathbf{w^{(2)}}.
+\end{split}
+\end{equation}
+
+
+\end{document}
