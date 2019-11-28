@@ -1,19 +1,36 @@
-\documentclass[12pt,titlepage]{article}
+\documentclass[a4paper,12pt,notitlepage]{article}
+\usepackage[left=1in, right=1in, top=1in, bottom=1in]{geometry}
+
+\usepackage{titling}
 \usepackage{amsmath}
 \usepackage{cancel}
 \usepackage{graphicx}
 \usepackage{hyperref}
 \hypersetup{hidelinks,}
 
-\usepackage[latin1]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
 
-\title{Notes on analytic gradient derivation for iris neural network}
+\usepackage{float}
+
+\pretitle{\begin{center}\Large\bfseries}
+\posttitle{\par\end{center}\vskip 0.5em}
+\preauthor{\begin{center}\small}
+\postauthor{\end{center}}
+\predate{\centering\small}
+\postdate{\par}
+
+\title{Notes on analytic gradient derivation}
 \author{Artyom Bondartsov}
 \date{\today}
 
 \begin{document}
 \maketitle
+\begin{abstract}
+The document illustrates the process of analytic gradient derivation for a neural network devised for the notorious iris dataset. It shows how neural network diagrams may be of great help when it comes to application of the chain rule correctly. Vectorized forms are also stated so that the derived gradients could be more efficiently implemented using Matlab or a linear algebra package Numpy from Python.
+\end{abstract}
 
+\section*{Neural network}
 Having the iris dataset as input, we let $Sx$ be a set of 4-dimensional input vectors,
 \begin{center}
 $Sx=\begin{Bmatrix}
@@ -21,11 +38,11 @@ $Sx=\begin{Bmatrix}
 x_{1}\\ 
 \vdots\\
 x_{4} 
-
 \end{bmatrix},&... 
 \end{Bmatrix}$.
 \end{center}
-We denote $|Sx|$ to be the total number of such vectors in the set $Sx$. \\\\
+We denote $|Sx|$ to be the total number of such vectors in the set $Sx$.
+
 We also have a set $Sy$ of \emph{one-hot} vectors transformed from the iris dataset's result variable with three classes, 
 \begin{center}
  $Sy=\begin{Bmatrix}
@@ -37,16 +54,20 @@ y_{3}
 \end{bmatrix},&... 
 \end{Bmatrix}$.
 \end{center}
-Please note that although $|Sy|$ is never used in the derivation that follows, yet for the sake of clarity $|Sx|=|Sy|$.\\\\
-And finally we define a neural network as depicted in the figure below
-    
+Please note that although $|Sy|$ is never used in the derivation that follows, yet for the sake of clarity $|Sx|=|Sy|$.
 
-\includegraphics{./iris.nn.png}
-\newpage
-In addition we define neural network's functions as below. Note that these functions are pretty standard for neural networks and given here only as a reminder. \\\\
+And finally we define a neural network as depicted in the figure \eqref{fig:full} below
+\begin{figure}[H]
+    \centering
+    \includegraphics{./iris.nn.png}
+%    \includegraphics[width=0.25\textwidth]{mesh}
+    \caption{A neural network for the iris dataset has one input layer with 4 inputs (+bias), one hidden layer of 8 neurons (+bias) and an output layer of 3 neurons by the number of iris' classes}
+    \label{fig:full}
+\end{figure}
+In addition we define neural network's functions as below. Note that these functions are pretty standard for neural networks and given here only as a reminder.\\\\
 A sum of weighted inputs from the zero (input) layer that enters an arbitrary neuron
 	\begin{equation*} z_{i}^{(1)}=w_{i,0}^{(1)}+w_{i,1}^{(1)}x_{1}+...+w_{i,4}^{(1)}x_{4}, i \in [1,8].\end{equation*} 
-     \\Using dot product, in matrix notation for the entire layer it transforms into  
+Using dot product, in matrix notation for the entire layer it transforms into  
       \begin{equation*}
        \begin{split} 
            \mathbf{z^{(1)}}&=\begin{bmatrix}
@@ -67,7 +88,7 @@ A sigmoid function of an arbitrary neuron of the first layer
     \begin{equation*} a_{i}^{(1)}=\frac{1}{1+e^{-z_{i}^{(1)}}}, i \in [1,8]. \end{equation*}
 A sum of weighted inputs from the first (hidden) layer that enters an arbitrary neuron
     \begin{equation*} z_{i}^{(2)}=w_{i,0}^{(2)}+w_{i,1}^{(2)}a_{1}^{(1)}+...+w_{i,8}^{(2)}a_{8}^{(1)}, i \in [1,3]. \end{equation*}
-     \\Using dot product, in matrix notation for the entire layer it transforms into  
+Using dot product, in matrix notation for the entire layer it transforms into  
        \begin{equation*}
         \begin{split}
            \mathbf{z^{(2)}}&=\begin{bmatrix}
@@ -87,8 +108,7 @@ A sum of weighted inputs from the first (hidden) layer that enters an arbitrary 
 A sigmoid function of an arbitrary neuron of the second layer \begin{equation*} a_{i}^{(2)}=\frac{1}{1+e^{-z_{i}^{(2)}}}, i \in [1,3]. \end{equation*}
 And a cross entropy loss function
 \begin{equation} \label{loss} C=-\frac{1}{|Sx|}\sum_{Sx}\sum_{j=1}^{3}y_{j}\ln a_{j}^{(2)} + (1-y_{j})\ln (1-a_{j}^{(2)}). \end{equation}
-\\
-Finally, we are interested in obtainig a gradient of \eqref{loss} w.r.t. the weights. In particular we will be deriving
+Finally, we are interested in obtainig a gradient of \eqref{loss} with respect to the weights. In particular we will be deriving
 \begin{align} \label{gradw2}
 \nabla_{w^{(2)}}C&=\begin{bmatrix}
  \frac{\partial C}{\partial w_{1,0}^{(2)}}& \frac{\partial C}{\partial w_{1,1}^{(2)}} &\cdots &\frac{\partial C}{\partial w_{1,8}^{(2)}}\\ 
@@ -104,18 +124,24 @@ Finally, we are interested in obtainig a gradient of \eqref{loss} w.r.t. the wei
 \end{align}
 
 \newpage
-We will start from \eqref{gradw2}. Yet instead of calculating the gradient matrix in its entirety we are going to derive a partial derivative in general form first, namely $\frac{\partial C}{\partial w_{i,j}^{(2)}}$.\\ 
-In order to spot all parts of \eqref{loss} that depend on some arbitrary $w_{i,j}^{(2)}$ we will use a diagram that purposefully depicts only those dependencies\\
-\includegraphics{./iris.nn.w2.png}\\
-Thus applying the chain rule we arrive at the formula\\
+\section*{Gradient with respect to $\mathbf{w^{(2)}}$}
+We will start from the formula \eqref{gradw2}. Yet instead of calculating the gradient matrix in its entirety we are going to derive a partial derivative in general form first, namely $\frac{\partial C}{\partial w_{i,j}^{(2)}}$.
+
+In order to spot all parts of \eqref{loss} that depend on some arbitrary $w_{i,j}^{(2)}$ we will use a figure \eqref{fig:w2} that purposefully depicts only those dependencies
+\begin{figure}[H]
+    \centering
+    \includegraphics{./iris.nn.w2.png}\\
+%    \includegraphics[width=0.25\textwidth]{mesh}
+    \caption{The diagram contains no arrows but those connecting the loss function ${C}$ to a particular weight ${w_{i,j}^{(2)}}$}
+    \label{fig:w2}
+\end{figure}
+Now, having all the dependencies before the very eyes it is easy to write down the chain rule formula following backwards from the loss function $C$ to some arbitrary weight $w_{i,j}^{(2)}$ in the picture
 \begin{equation} \label{chain2}
 \begin{split}
 \frac{\partial C}{\partial w_{i,j}^{(2)}}&=\frac{\partial C}{\partial a_{i}^{(2)}}\frac{\partial a_{i}^{(2)}}{\partial z_{i}^{(2)}}\frac{\partial z_{i}^{(2)}}{\partial w_{i,j}^{(2)}}.
 \end{split}
 \end{equation}
-\\
-Now taking those partial derivatives independently we get
-
+Taking those partial derivatives independently we get
 \begin{subequations}
 \begin{align}
  \frac{\partial C}{\partial a_{i}^{(2)}} 
@@ -137,7 +163,7 @@ Now taking those partial derivatives independently we get
 &=\left\{\begin{matrix} 1&, j=0\\ a_{j}^{(1)}&, j\neq 0. \end{matrix}\right. \label{der2:3}
 \end{align}
 \end{subequations}
-\\And finally combining \eqref{der2:1}, \eqref{der2:2} and \eqref{der2:3} together we obtain
+And finally combining \eqref{der2:1}, \eqref{der2:2} and \eqref{der2:3} together we obtain
 \begin{equation} \label{der2}
 \begin{split}
 \frac{\partial C}{\partial w_{i,j}^{(2)}}&=\frac{\partial C}{\partial a_{i}^{(2)}}\frac{\partial a_{i}^{(2)}}{\partial z_{i}^{(2)}}\frac{\partial z_{i}^{(2)}}{\partial w_{i,j}^{(2)}}\\
@@ -161,7 +187,7 @@ Using \eqref{der2} our matrix gradient \eqref{gradw2} now takes the form
 \end{bmatrix}.
 \end{split}
 \end{equation}
-\\
+
 In addition, \eqref{gradw2f} can also take a nice vectorized form using dot product
 \begin{equation} \label{gradw2f2}
 \begin{split}
@@ -177,12 +203,20 @@ In addition, \eqref{gradw2f} can also take a nice vectorized form using dot prod
 &=\frac{1}{|Sx|}(\mathbf{a^{(2)}}-\mathbf{y})\cdot\mathbf{a^{(1)^{T}}}.
 \end{split}
 \end{equation}
-\\Please note that $\mathbf{a^{(1)^{T}}}$ includes a bias first column.
+Please note that $\mathbf{a^{(1)^{T}}}$ includes a bias first column.
 \newpage 
-In order to obtain \eqref{gradw1} we will use the same approach, i.e. we will derive a general formula of partial derivative, namely $\frac{\partial C}{\partial w_{i,j}^{(1)}}$. \\
-Once again we are going to employ graphical approach to spot all parts of \eqref{loss} that would get changed if some arbitrary $w_{i,j}^{(1)}$ was wiggled.\\
-\includegraphics{./iris.nn.w1.png}
-\\Thus according to the chain rule we have\\
+\section*{Gradient with respect to $\mathbf{w^{(1)}}$}
+In order to obtain \eqref{gradw1} we will use the same approach, i.e. we will derive a general formula of partial derivative, namely $\frac{\partial C}{\partial w_{i,j}^{(1)}}$.
+
+Once again we are going to employ graphical approach to spot all parts of \eqref{loss} that would get changed if some arbitrary $w_{i,j}^{(1)}$ was wiggled.
+\begin{figure}[H]
+    \centering
+    \includegraphics{./iris.nn.w1.png}
+%    \includegraphics[width=0.25\textwidth]{mesh}
+    \caption{This time from the loss function ${C}$ to a particular weight ${w_{i,j}^{(1)}}$ leads multiple paths}
+    \label{fig:w1}
+\end{figure}
+Starting from $C$ in figure \eqref{fig:w1} and going backwards to the arbitrary weight $w_{i,j}^{(1)}$ we write down
 \begin{equation} \label{chain1}
 \begin{split}
 \frac{\partial C}{\partial w_{i,j}^{(1)}}
@@ -192,7 +226,7 @@ Once again we are going to employ graphical approach to spot all parts of \eqref
 &=\left( \sum_{k=1}^{3}\frac{\partial C}{\partial a_{k}^{(2)}}\frac{\partial a_{k}^{(2)}}{\partial z_{k}^{(2)}}\frac{\partial z_{k}^{(2)}}{\partial a_{i}^{(1)}}\right )\frac{\partial a_{i}^{(1)}}{\partial z_{i}^{(1)}}\frac{\partial z_{i}^{(1)}}{\partial w_{i,j}^{(1)}}.
 \end{split}
 \end{equation}
-\\Let us recall that we have already carried out derivations for some of these partial derivatives. Specifically, $\frac{\partial C}{\partial a_{k}^{(2)}}$ is \eqref{der2:1} and $\frac{\partial a_{k}^{(2)}}{\partial z_{k}^{(2)}}$ is \eqref{der2:2}. Hence only 3 partial derivatives left, and one of them, $\frac{\partial a_{i}^{(1)}}{\partial z_{i}^{(1)}}$, is in fact \eqref{der2:2} with a different upper index.\\ 
+Please note how the multiple paths in the picture have been transformed into summation in the formula. The chain rule \eqref{chain1} looks scary yet let us recall that we have already carried out derivations for some of these partial derivatives. Specifically, $\frac{\partial C}{\partial a_{k}^{(2)}}$ is \eqref{der2:1} and $\frac{\partial a_{k}^{(2)}}{\partial z_{k}^{(2)}}$ is \eqref{der2:2}. Hence only 3 partial derivatives left, and one of them, $\frac{\partial a_{i}^{(1)}}{\partial z_{i}^{(1)}}$, is in fact also \eqref{der2:2} but with a different upper index. Thus, taking care of the rest of the derivatives independently we get
 \begin{subequations}
 \begin{align}
 \frac{\partial z_{k}^{(2)}}{\partial a_{i}^{(1)}}
@@ -208,8 +242,7 @@ x_{j}&, j \neq 0
  & =a_{i}^{(1)}(1-a_{i}^{(1)}). \label{der1:3}
 \end{align}
 \end{subequations}
-\\Now combining \eqref{der2:1}, \eqref{der2:2}, \eqref{der1:1}, \eqref{der1:2} and \eqref{der1:3} we have
-
+Now combining \eqref{der2:1}, \eqref{der2:2}, \eqref{der1:1}, \eqref{der1:2} and \eqref{der1:3} we have
 \begin{equation} \label{der1}
 \begin{split}
 \frac{\partial C}{\partial w_{i,j}^{(1)}}
@@ -228,14 +261,14 @@ x_{j}&, j \neq 0
 \end{matrix}\right..
 \end{split}
 \end{equation}
-\\Before proceeding to the matrix gradient \eqref{gradw1} we are going to introduce some additional notation for the sake of simplicity. We will denote
+Before proceeding to the matrix gradient \eqref{gradw1} we are going to introduce some additional notation for the sake of simplification. We will denote
 \begin{subequations}
 \begin{align}
 f_{i}^{(2)}&=\left(\sum_{k=1}^{3} (a_{k}^{(2)}-y_{k})w_{k,i}^{(2)}\right ), i \in [1,8] \label{den:1}\\
 g_{i}^{(1)}&=a_{i}^{(1)}(1-a_{i}^{(1)}), i \in [1,8]. \label{den:2}
 \end{align}
 \end{subequations}
-\\Using \eqref{den:1} and \eqref{den:2} the matrix gradient \eqref{gradw1} now takes the form
+Using \eqref{den:1} and \eqref{den:2} the matrix gradient \eqref{gradw1} now takes the form
 \begin{align} \label{gradw1f}
 \nabla_{w^{(1)}}C
 &=\begin{bmatrix}
@@ -249,7 +282,8 @@ g_{i}^{(1)}&=a_{i}^{(1)}(1-a_{i}^{(1)}), i \in [1,8]. \label{den:2}
  \sum_{Sx}g_{8}^{(1)}f_{8}^{(2)}& \sum_{Sx}g_{8}^{(1)}f_{8}^{(2)}x_{1} & \cdots & \sum_{Sx}g_{8}^{(1)}f_{8}^{(2)}x_{4}. 
 \end{bmatrix}
 \end{align}
-\\In addition, \eqref{gradw1f} can also take a nice vectorized form using dot product
+
+In addition, \eqref{gradw1f} can also take a nice vectorized form using dot product
 \begin{equation} \label{gradw1f2}
 \begin{split}
 \nabla_{w^{(1)}}C
@@ -265,8 +299,9 @@ g_{i}^{(1)}&=a_{i}^{(1)}(1-a_{i}^{(1)}), i \in [1,8]. \label{den:2}
 &=\frac{1}{|Sx|}\left(\mathbf{g^{(1)}}\odot\mathbf{f^{(2)}} \right )\cdot \mathbf{x^{T}},
 \end{split}
 \end{equation}
-\\where $\odot$ is Hadamard (element-wise) product.
-\\\\Please note that $\mathbf{x^{T}}$ includes a bias first column. Heed that \eqref{den:1} can aslo be vectorized if needed
+where $\odot$ is Hadamard (element-wise) product.
+
+Please note that $\mathbf{x^{T}}$ includes a bias first column. Heed that \eqref{den:1} can aslo be vectorized if needed
 \begin{equation}
 \begin{split}
 \mathbf{f^{(2)}}

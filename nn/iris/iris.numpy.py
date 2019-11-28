@@ -114,6 +114,9 @@ def backward(W, A, X, y):
 # some info on gradient checking http://cs231n.github.io/neural-networks-3/
 # X is a numpy matrix without bias
 def check_gradient(X, y, epsilon = 1e-4):
+    # TODO: initialize with rand/sqrt(number_of_inputs).
+    # It leads to standard deviation of Z closer to 1, hence avoid neurons saturation in the hidden layer, hence faster learning.
+    # See http://neuralnetworksanddeeplearning.com/chap3.html#weight_initialization
     W = np.random.rand(5*8 + 9*3) # (4 + bias)*8 + (8 + bias)*3
     G_numeric = np.zeros(5*8 + 9*3)
 
@@ -137,6 +140,9 @@ def check_gradient(X, y, epsilon = 1e-4):
 # X - one record of X is a row vector, i.e. X is a matrix of the form record num X 4
 # y - one-hot vectors 
 def train(Xdf, y, nu=0.1, steps=500):
+    # TODO: initialize with rand/sqrt(number_of_inputs).
+    # It leads to standard deviation of Z closer to 1, hence avoid neurons saturation in the hidden layer, hence faster learning.
+    # See http://neuralnetworksanddeeplearning.com/chap3.html#weight_initialization
     W = np.random.rand(5*8 + 9*3) # (4 + bias)*8 + (8 + bias)*3
     F = np.zeros(steps)
     
