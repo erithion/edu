@@ -83,9 +83,11 @@ def cross(A, y):
 
     s1 = (y * np.log(A2).T).dot(np.ones(classes)) # wtf did I use this s1 = y.dot(np.log(A2))
     s2 = ((1 - y)* np.log(1 - A2).T).dot(np.ones(classes)) # s2 = (1 - y).dot(np.log(1 - A2))
-    return -np.sum(s1 + s2) / size
+    return -np.sum(s1 + s2) / size # regularization has been moved out
 
-
+def regularization(W, size, lmbd):
+    return W.dot(W.T)*lmbd/(2*size)
+    
 # X is a matrix of Nx4 (without bias)
 # W is a flattened 5x8 + 9x3 matrices
 # A is a flattened 8xN + 3xN matrices, where N is a row number of y
@@ -107,29 +109,34 @@ def backward(W, A, X, y):
     m3_= m1_ * m2_
     G1 = m3_.dot(np.c_[np.ones(size), X]).T / size # almost forgot to add bias to X
     
-    # TODO: regularization
+    # regularization is moved out to gradient descent implementations
 
     return np.concatenate([G1.ravel(), G2.ravel()])
 
 # some info on gradient checking http://cs231n.github.io/neural-networks-3/
 # X is a numpy matrix without bias
-def check_gradient(X, y, epsilon = 1e-4):
-    # TODO: initialize with rand/sqrt(number_of_inputs).
-    # It leads to standard deviation of Z closer to 1, hence avoid neurons saturation in the hidden layer, hence faster learning.
+# lmbd is a regularization parameter. default zero means calculate without regularization
+def check_gradient(X, y, epsilon = 1e-4, lmbd=0):
+    # The entire W will have N(0,1) distribution
+    # That means a standard deviation of Z is neither closer to 1 nor 0, 
+    #     hence the neurons of the hidden layer will not get saturated, hence faster learning.
     # See http://neuralnetworksanddeeplearning.com/chap3.html#weight_initialization
     W = np.random.rand(5*8 + 9*3) # (4 + bias)*8 + (8 + bias)*3
     G_numeric = np.zeros(5*8 + 9*3)
+    size = X.shape[0]
 
     A = forward(W, X)
-    F = cross(A, y)
-    G_analytic = backward(W, A, X, y)
+    G_analytic = backward(W, A, X, y)\
+               + W*lmbd/size # accounting for regularization
 
     id = np.identity(G_numeric.shape[0])
     for i in range(G_numeric.shape[0]):
         W_minus = W - id[i]*epsilon 
         W_plus = W + id[i]*epsilon
-        F_minus = cross(forward(W_minus, X), y)
-        F_plus = cross(forward(W_plus, X), y)
+        F_minus = cross(forward(W_minus, X), y)\
+                + regularization(W_minus, size, lmbd) # accounting for regularization
+        F_plus = cross(forward(W_plus, X), y)\
+               + regularization(W_plus, size, lmbd) # accounting for regularization
         G_numeric[i] = (F_plus - F_minus)/(2*epsilon)
 
     err = np.linalg.norm(G_analytic - G_numeric)/max(np.linalg.norm(G_analytic), np.linalg.norm(G_numeric))
@@ -137,30 +144,66 @@ def check_gradient(X, y, epsilon = 1e-4):
         raise ValueError('Numerical and analytic gradients differ by order more than 1e-7')
     return 
     
+# Gradient descent
 # X - one record of X is a row vector, i.e. X is a matrix of the form record num X 4
 # y - one-hot vectors 
-def train(Xdf, y, nu=0.1, steps=500):
-    # TODO: initialize with rand/sqrt(number_of_inputs).
-    # It leads to standard deviation of Z closer to 1, hence avoid neurons saturation in the hidden layer, hence faster learning.
+# lmbd is a regularization parameter. default zero means calculate without regularization
+def gd(Xdf, y, nu=0.1, steps=500, lmbd=0):
+    # The entire W will have N(0,1) distribution
+    # That means a standard deviation of Z is neither closer to 1 nor 0, 
+    #     hence the neurons of the hidden layer will not get saturated, hence faster learning.
     # See http://neuralnetworksanddeeplearning.com/chap3.html#weight_initialization
     W = np.random.rand(5*8 + 9*3) # (4 + bias)*8 + (8 + bias)*3
     F = np.zeros(steps)
+    size = Xdf.shape[0]
     
     for i in range(steps):
         A = forward(W, Xdf.to_numpy())
-        F[i] = cross(A, y)
-        G = backward(W, A, Xdf.to_numpy(), y)
+        F[i] = cross(A, y)\
+             + regularization(W, size, lmbd) # accounting for regularization
+        G = backward(W, A, Xdf.to_numpy(), y)\
+          + W*lmbd/size # accounting for regularization
         W -= nu * G # we don't need reshaping before update since G and W are aligned nicely  
 
     return W, F
-    
-        
+
 def predict(W, Xdf):
     size = Xdf.shape[0]
     A = forward(W, Xdf.to_numpy())
     A2 = A[8*size:].reshape((3, size))
     return A2
 
+# Stochastic GD 
+# validation_hold is a part of Xdf to withhold for use in validation tests   
+# y is a one-hot vector
+# lmbd is a regularization parameter. default zero means calculate without regularization
+# returns 
+#   W - a gradient of two matrices 5*8 and 9*3 in one flattened array
+#   acc - list of accuracy calculations after each new epoch
+def sgd(Xdf, y, nu=0.1, batch_size=10, epoch_count=1, validation_hold=0.3, lmbd=0):
+    size = Xdf.shape[0]
+    acc = np.zeros(epoch_count)
+    W = np.random.rand(5*8 + 9*3) # (4 + bias)*8 + (8 + bias)*3
+    for i in range(epoch_count):
+        indices = np.random.permutation(Xdf.shape[0])
+        thrsld = int(size*validation_hold)
+        idx_train = indices[:size - thrsld]
+        idx_valdn = indices[size - thrsld:]
+        for j in range(int(idx_train.shape[0]/batch_size)):
+            batch_x = Xdf.iloc[idx_train[j*batch_size:(j+1)*batch_size],:]
+            batch_y = y[idx_train[j*batch_size:(j+1)*batch_size],:]
+            A = forward(W, batch_x.to_numpy())
+            G = backward(W, A, batch_x.to_numpy(), batch_y)\
+              + W*lmbd/size # accounting for regularization
+            W -= nu * G
+            
+        y_pred = predict(W, Xdf.iloc[idx_valdn,:])
+        res = np.nonzero(np.argmax(y[idx_valdn], axis=1) - np.argmax(y_pred.T, axis=1)) # nonzero elements
+        acc[i] = 100 - res[0].shape[0] / y[idx_valdn].shape[0] * 100
+        
+    return W, acc
+    
+        
 # Read data
 # Inspect
 # Transform and clean the data up: remove nulls, transform categorical
@@ -183,7 +226,7 @@ X_train_scaled, min, scale = rescale(X_train)
 
 check_gradient(X.iloc[[1,2],:], onehot(y_train, num_classes=3)[[1,2],:])
 
-W, cost = train(X_train_scaled, onehot(y_train, num_classes=3), nu=0.5, steps=10000)
+W, cost = gd(X_train_scaled, onehot(y_train, num_classes=3), nu=0.5, steps=10000)
 
 X_test_scaled, _, _ = rescale(X_test, min=min, scale=scale)
 
@@ -205,3 +248,18 @@ plt.ylabel('cross-entropy cost')
 plt.xlabel('steps')
 plt.grid(True)
 plt.show()
+
+W, acc = sgd(X_train_scaled, onehot(y_train, num_classes=3), nu=0.5, epoch_count = 450, lmbd=0.001)
+
+plt.plot(acc)
+plt.title('Accuracy curve on the validation data after SGD')
+plt.ylabel('Accuracy')
+plt.xlabel('epoch')
+plt.grid(True)
+plt.show()
+
+y_test_pred = predict(W, X_test_scaled)
+res_test = np.nonzero(y_test - np.argmax(y_test_pred.T, axis=1)) # nonzero elements
+print('Correct predictions (SGD) on the test set: %.2f (%i/%i)' % ( 100 - res_test[0].shape[0] / y_test.shape[0] * 100
+                                                            , y_test.shape[0] - res_test[0].shape[0]
+                                                            , y_test.shape[0]))
