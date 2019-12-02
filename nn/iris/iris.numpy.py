@@ -173,18 +173,31 @@ def predict(W, Xdf):
     A2 = A[8*size:].reshape((3, size))
     return A2
 
+# moving average filter to smooth a function
+# width is a number of points in a filter.
+#       the more points in the window, the smoother the function gets. 
+#       though, be mindful that also the bigger the delay (shift to the left) would be
+def moving_average(x, width):
+    filter_window = np.ones(width)/width
+    return np.convolve(x, filter_window, mode='valid')
+    
 # Stochastic GD 
-# validation_hold is a part of Xdf to withhold for use in validation tests   
 # y is a one-hot vector
+# nu is a gradient step
+# batch_size 
+# max_epoch_count is a max number of epochs to train. 
+#                 May take less if the accuracy on the held-out data would start increasing less than acc_thrs
+# validation_hold is a part of Xdf to withhold for use in validation tests
 # lmbd is a regularization parameter. default zero means calculate without regularization
+# acc_thrs makes gradient descent to stop if the accuracy on the validation data becomes less than this threshold 
 # returns 
 #   W - a gradient of two matrices 5*8 and 9*3 in one flattened array
 #   acc - list of accuracy calculations after each new epoch
-def sgd(Xdf, y, nu=0.1, batch_size=10, epoch_count=1, validation_hold=0.3, lmbd=0):
+def sgd(Xdf, y, nu=0.1, batch_size=10, max_epoch_count=1, validation_hold=0.3, lmbd=0, avg_window=20, acc_thrs=1e-2):
     size = Xdf.shape[0]
-    acc = np.zeros(epoch_count)
+    acc = np.zeros(max_epoch_count)
     W = np.random.rand(5*8 + 9*3) # (4 + bias)*8 + (8 + bias)*3
-    for i in range(epoch_count):
+    for i in range(max_epoch_count):
         indices = np.random.permutation(Xdf.shape[0])
         thrsld = int(size*validation_hold)
         idx_train = indices[:size - thrsld]
@@ -201,8 +214,15 @@ def sgd(Xdf, y, nu=0.1, batch_size=10, epoch_count=1, validation_hold=0.3, lmbd=
         res = np.nonzero(np.argmax(y[idx_valdn], axis=1) - np.argmax(y_pred.T, axis=1)) # nonzero elements
         acc[i] = 100 - res[0].shape[0] / y[idx_valdn].shape[0] * 100
         
+        # calculate numerical derivative of accuracy
+        if i >= 2*avg_window:
+            avg_pp = moving_average(acc[i-(2*avg_window):i], avg_window)
+            acc_deriv_numeric = (avg_pp[-1] - avg_pp[0])/avg_pp.shape[0]
+            if np.abs(acc_deriv_numeric) < acc_thrs:
+                acc = acc[:i]
+                break
+        
     return W, acc
-    
         
 # Read data
 # Inspect
@@ -213,6 +233,13 @@ def sgd(Xdf, y, nu=0.1, batch_size=10, epoch_count=1, validation_hold=0.3, lmbd=
 # Train the model
 # Verify the model with test
 # Plot learning curves
+
+def print_results(y, y_pred, title):
+    res = np.nonzero(y - np.argmax(y_pred.T, axis=1)) # nonzero elements
+    print(title + ': %.2f (%i/%i)' % ( 100 - res[0].shape[0] / y.shape[0] * 100
+                                     , y.shape[0] - res[0].shape[0]
+                                     , y.shape[0]))
+
 
 data = pd.read_csv(data_path)
 
@@ -228,38 +255,30 @@ check_gradient(X.iloc[[1,2],:], onehot(y_train, num_classes=3)[[1,2],:])
 
 W, cost = gd(X_train_scaled, onehot(y_train, num_classes=3), nu=0.5, steps=10000)
 
+print_results(y_train, predict(W, X_train_scaled), 'Correct predictions on the train set')
+
 X_test_scaled, _, _ = rescale(X_test, min=min, scale=scale)
 
-y_train_pred = predict(W, X_train_scaled)
-res_train = np.nonzero(y_train - np.argmax(y_train_pred.T, axis=1)) # nonzero elements
-print('Correct predictions on the train set: %.2f (%i/%i)' % ( 100 - res_train[0].shape[0] / y_train.shape[0] * 100
-                                                             , y_train.shape[0] - res_train[0].shape[0]
-                                                             , y_train.shape[0]))
+print_results(y_test, predict(W, X_test_scaled), 'Correct predictions on the test set')
 
-y_test_pred = predict(W, X_test_scaled)
-res_test = np.nonzero(y_test - np.argmax(y_test_pred.T, axis=1)) # nonzero elements
-print('Correct predictions on the test set: %.2f (%i/%i)' % ( 100 - res_test[0].shape[0] / y_test.shape[0] * 100
-                                                            , y_test.shape[0] - res_test[0].shape[0]
-                                                            , y_test.shape[0]))
+W, acc = sgd(X_train_scaled, onehot(y_train, num_classes=3), nu=0.5, max_epoch_count = 450, lmbd=0.001)
 
+print_results(y_test, predict(W, X_test_scaled), 'Correct predictions (SGD) on the test set')
+
+plt.subplots_adjust(hspace=0.6)
+plt.subplot(2, 1, 1)
 plt.plot(cost)
-plt.title('Learning curve')
-plt.ylabel('cross-entropy cost')
-plt.xlabel('steps')
+plt.title('Learning (GD) on train data')
+plt.ylabel('loss')
+plt.xlabel('step')
 plt.grid(True)
-plt.show()
-
-W, acc = sgd(X_train_scaled, onehot(y_train, num_classes=3), nu=0.5, epoch_count = 450, lmbd=0.001)
-
+                                                            
+plt.subplot(2, 1, 2)
 plt.plot(acc)
-plt.title('Accuracy curve on the validation data after SGD')
-plt.ylabel('Accuracy')
+plt.plot(moving_average(acc, 25), color='red')
+plt.title('Accuracy (SGD) on validation data')
+plt.ylabel('Accuracy, %')
 plt.xlabel('epoch')
 plt.grid(True)
-plt.show()
 
-y_test_pred = predict(W, X_test_scaled)
-res_test = np.nonzero(y_test - np.argmax(y_test_pred.T, axis=1)) # nonzero elements
-print('Correct predictions (SGD) on the test set: %.2f (%i/%i)' % ( 100 - res_test[0].shape[0] / y_test.shape[0] * 100
-                                                            , y_test.shape[0] - res_test[0].shape[0]
-                                                            , y_test.shape[0]))
+plt.show()
