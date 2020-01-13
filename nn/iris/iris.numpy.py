@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from score import f1_macro, f1_micro, confusion_matrix, matthews_correlation
+
 warnings.simplefilter(action='ignore', category=FutureWarning)
 np.set_printoptions(precision=3)
 np.set_printoptions(suppress=True)
@@ -38,7 +40,8 @@ def split(X, y=None, train_size=0.8):
     #numpy.random.shuffle(x)
     #training, test = x[:80,:], x[80:,:]
     indices = np.random.permutation(X.shape[0])
-    threshold = int(train_size * 100)
+#    threshold = int(train_size * 100)
+    threshold = int(train_size * X.shape[0])
     train_idx, test_idx = indices[:threshold], indices[threshold:]
     X_train, X_test = X.iloc[train_idx,:], X.iloc[test_idx,:]
     y_train, y_test = None, None
@@ -223,7 +226,7 @@ def sgd(Xdf, y, nu=0.1, batch_size=10, max_epoch_count=1, validation_hold=0.3, l
                 break
         
     return W, acc
-        
+    
 # Read data
 # Inspect
 # Transform and clean the data up: remove nulls, transform categorical
@@ -235,10 +238,19 @@ def sgd(Xdf, y, nu=0.1, batch_size=10, max_epoch_count=1, validation_hold=0.3, l
 # Plot learning curves
 
 def print_results(y, y_pred, title):
+    m = confusion_matrix(y, y_pred.T)
+    micro = f1_micro(m)
+    macro = f1_macro(m)
+    matt = matthews_correlation(m)
     res = np.nonzero(y - np.argmax(y_pred.T, axis=1)) # nonzero elements
-    print(title + ': %.2f (%i/%i)' % ( 100 - res[0].shape[0] / y.shape[0] * 100
+    print(title + ': %.2f%% (%i/%i)   Matthews correlation: %.2f   f1_micro: %.2f   f1_macro: %.2f' \
+                                     % ( 100 - res[0].shape[0] / y.shape[0] * 100
                                      , y.shape[0] - res[0].shape[0]
-                                     , y.shape[0]))
+                                     , y.shape[0]
+                                     , matt
+                                     , micro
+                                     , macro))
+
 
 
 data = pd.read_csv(data_path)
@@ -261,9 +273,12 @@ X_test_scaled, _, _ = rescale(X_test, min=min, scale=scale)
 
 print_results(y_test, predict(W, X_test_scaled), 'Correct predictions on the test set')
 
-W, acc = sgd(X_train_scaled, onehot(y_train, num_classes=3), nu=0.5, max_epoch_count = 450, lmbd=0.001)
+W, acc = sgd(X_train_scaled, onehot(y_train, num_classes=3), nu=0.5, max_epoch_count = 450)
 
 print_results(y_test, predict(W, X_test_scaled), 'Correct predictions (SGD) on the test set')
+
+print(predict(W, X_test_scaled).T)
+
 
 plt.subplots_adjust(hspace=0.6)
 plt.subplot(2, 1, 1)
