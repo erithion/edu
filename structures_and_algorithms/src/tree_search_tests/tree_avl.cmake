@@ -1,8 +1,8 @@
 cmake_minimum_required      ( VERSION 3.12.0 )
 
-set                         ( PROJECT_NAME                       avl_tests )
+set                         ( PROJECT_NAME                       test_tree_avl )
 set                         ( INSTALLDIR                         ${BUILDDIR}/tree/search )
-set                         ( SRC_FILES                          avl.cpp)
+set                         ( SRC_FILES                          tree_avl.cpp)
 
 # compiler/linker flags
 string                      ( APPEND CMAKE_CXX_FLAGS             " /EHsc" )

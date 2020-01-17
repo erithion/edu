@@ -1,10 +1,10 @@
 cmake_minimum_required      ( VERSION 3.12.0 )
 
-include                     (${CMAKE_CURRENT_SOURCE_DIR}/bst.cmake)
-include                     (${CMAKE_CURRENT_SOURCE_DIR}/manual_balance.cmake)
-include                     (${CMAKE_CURRENT_SOURCE_DIR}/avl.cmake)
-include                     (${CMAKE_CURRENT_SOURCE_DIR}/red_black.cmake)
-include                     (${CMAKE_CURRENT_SOURCE_DIR}/interval.cmake) # interval tree
+include                     (${CMAKE_CURRENT_SOURCE_DIR}/tree.cmake)
+include                     (${CMAKE_CURRENT_SOURCE_DIR}/tree_avl.cmake)
+include                     (${CMAKE_CURRENT_SOURCE_DIR}/tree_redblack.cmake)
+include                     (${CMAKE_CURRENT_SOURCE_DIR}/tree_interval.cmake)
+include                     (${CMAKE_CURRENT_SOURCE_DIR}/tree_balance.cmake)
 # include                     (${CMAKE_CURRENT_SOURCE_DIR}/tree_segment.cmake) # segment tree
 # include                     (${CMAKE_CURRENT_SOURCE_DIR}/tree_suffix.cmake) # suffix tree
 # include                     (${CMAKE_CURRENT_SOURCE_DIR}/suffix_array.cmake)

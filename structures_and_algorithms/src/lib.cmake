@@ -2,7 +2,7 @@ cmake_minimum_required      ( VERSION 3.12.0 )
 
 set                         ( PROJECT_NAME                       lib )
 set                         ( SRC_FILES                          lib.cpp)
-file                        ( GLOB 
+file                        ( GLOB_RECURSE 
                               INC_ST_FILES                       tree_search/*.hpp )
 file                        ( GLOB 
                               INC_OT_FILES                       tree_other/*.hpp )

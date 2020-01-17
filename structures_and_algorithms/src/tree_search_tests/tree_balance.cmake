@@ -1,8 +1,8 @@
 cmake_minimum_required      ( VERSION 3.12.0 )
 
-set                         ( PROJECT_NAME                       interval_tests )
+set                         ( PROJECT_NAME                       test_tree_balance )
 set                         ( INSTALLDIR                         ${BUILDDIR}/tree/search )
-set                         ( SRC_FILES                          interval.cpp)
+set                         ( SRC_FILES                          tree_balance.cpp)
 
 # compiler/linker flags
 string                      ( APPEND CMAKE_CXX_FLAGS             " /EHsc" )

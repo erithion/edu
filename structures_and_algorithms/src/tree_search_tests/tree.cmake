@@ -1,8 +1,8 @@
 cmake_minimum_required      ( VERSION 3.12.0 )
 
-set                         ( PROJECT_NAME                       manual_balance_tests )
+set                         ( PROJECT_NAME                       test_tree )
 set                         ( INSTALLDIR                         ${BUILDDIR}/tree/search )
-set                         ( SRC_FILES                          manual_balance.cpp)
+set                         ( SRC_FILES                          tree.cpp)
 
 # compiler/linker flags
 string                      ( APPEND CMAKE_CXX_FLAGS             " /EHsc" )

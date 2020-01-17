@@ -1,8 +1,8 @@
 cmake_minimum_required      ( VERSION 3.12.0 )
 
-set                         ( PROJECT_NAME                       red_black_tests )
+set                         ( PROJECT_NAME                       test_tree_redblack )
 set                         ( INSTALLDIR                         ${BUILDDIR}/tree/search )
-set                         ( SRC_FILES                          red_black.cpp)
+set                         ( SRC_FILES                          tree_redblack.cpp)
 
 # compiler/linker flags
 string                      ( APPEND CMAKE_CXX_FLAGS             " /EHsc" )
