@@ -44,8 +44,8 @@ namespace tree_search {
         }
     }
 
-    template <typename T, typename AugmentT, typename ... Capabilities>//typename Traverse, typename Insert, typename Rotate>
-    struct tree : public Capabilities... { //public Traverse, public Insert, public Rotate {
+    template <typename T, typename AugmentT, typename ... Capabilities>
+    struct tree : public Capabilities... { 
         using value_type = T;
         using augment_type = AugmentT;
         std::unique_ptr<aux::node<value_type, augment_type>> root_;

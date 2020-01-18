@@ -7,13 +7,15 @@
 
 namespace tree_search {
 
-    struct interval_search_cap {};
+    struct capability_search_interval {};
 
-    namespace interval_aux {
+    namespace aux {
 
-        // TODO: add other traversal functions
+        template <typename Tree>
+        using callback = std::function<void(const typename Tree::value_type&)>;
+
         template <typename T, typename Tree>
-        void search(const std::unique_ptr<Tree>& tree, const std::pair<T, T>& interval, const std::function<void(const typename Tree::value_type&)>& fn, tag_inorder&&) {
+        void search(const std::unique_ptr<Tree>& tree, const std::pair<T, T>& interval, const callback<Tree>& fn, tag_inorder&&) {
             if (!tree) return;
             if (tree->left_ && tree->left_->augment_.max_ >= interval.first)
                 search(tree->left_, interval, fn, tag_inorder{});
@@ -23,26 +25,42 @@ namespace tree_search {
                 search(tree->right_, interval, fn, tag_inorder{});
         }
 
-/*        template <typename Tree>
-        void traverse(preorder_tag, const std::unique_ptr<Tree>& tree, const std::function<void(const typename Tree::value_type)>& fn) {
+        template <typename T, typename Tree>
+        void search(const std::unique_ptr<Tree>& tree, const std::pair<T, T>& interval, const callback<Tree>& fn, tag_preorder&&) {
             if (!tree) return;
-            if (fn) fn(tree->value_);
-            traverse(preorder_tag{}, tree->left_, fn);
-            traverse(preorder_tag{}, tree->right_, fn);
+            if (interval.first <= tree->value_.second && !(interval.second < tree->value_.first))
+                if (fn) fn(tree->value_);
+            if (tree->left_ && tree->left_->augment_.max_ >= interval.first)
+                search(tree->left_, interval, fn, tag_inorder{});
+            if (tree->value_.first <= interval.second)
+                search(tree->right_, interval, fn, tag_inorder{});
         }
 
-        template <typename Tree>
-        void traverse(postorder_tag, const std::unique_ptr<Tree>& tree, const std::function<void(const typename Tree::value_type&)>& fn) {
+        template <typename T, typename Tree>
+        void search(const std::unique_ptr<Tree>& tree, const std::pair<T, T>& interval, const callback<Tree>& fn, tag_postorder&&) {
             if (!tree) return;
-            traverse(postorder_tag{}, tree->left_, fn);
-            traverse(postorder_tag{}, tree->right_, fn);
-            if (fn) fn(tree->value_);
-        }*/
+            if (tree->left_ && tree->left_->augment_.max_ >= interval.first)
+                search(tree->left_, interval, fn, tag_inorder{});
+            if (tree->value_.first <= interval.second)
+                search(tree->right_, interval, fn, tag_inorder{});
+            if (interval.first <= tree->value_.second && !(interval.second < tree->value_.first))
+                if (fn) fn(tree->value_);
+        }
+
+        template <typename T, typename ... Ts>
+        constexpr bool is_one_of_v = std::disjunction_v<std::is_same<T, Ts>...>;
+
+        // Enables int type if interval tree requirements are satisfied
+        template <typename Tag, typename T, typename Tree>
+        using enable_interval_search_t =
+            std::enable_if_t< std::is_base_of_v<capability_search_interval, Tree>
+                           && aux::is_one_of_v<Tag, tag_inorder, tag_postorder, tag_preorder> // only for 3 predefined tags
+                           && std::is_same_v<typename Tree::augment_type, aux::interval_augment<T>> // only for trees with interval_augment type within
+            , int>;
     }
 
-    // TODO: enable_if for 3 predefined tags only
-    template <typename Tag, typename T, typename Tree, std::enable_if_t<std::is_base_of_v<interval_search_cap, Tree>, int> = 0>
+    template <typename Tag, typename T, typename Tree, aux::enable_interval_search_t<Tag, T, Tree> = 0>
     void search(Tag&& tag, const Tree& tree, const std::pair<T, T>& interval, const std::function<void(const typename Tree::value_type&)>& fn) {
-        interval_aux::search(tree.root_, interval, fn, std::move(tag));
+        aux::search(tree.root_, interval, fn, std::move(tag));
     }
 }

@@ -8,7 +8,7 @@
 
 namespace tree_search {
 
-    struct traverse_cap {};
+    struct capability_traverse {};
 
     namespace aux {
 
@@ -37,7 +37,7 @@ namespace tree_search {
         }
     }
 
-    template <typename Tag, typename Tree, std::enable_if_t<std::is_base_of_v<traverse_cap, Tree>, int> = 0>
+    template <typename Tag, typename Tree, std::enable_if_t<std::is_base_of_v<capability_traverse, Tree>, int> = 0>
     void traverse(Tag&& tag, const Tree& tree, const std::function<void(const typename Tree::value_type&)>& fn) {
         aux::traverse_(tree.root_, fn, std::forward<Tag>(tag));
     }

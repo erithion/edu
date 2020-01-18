@@ -6,7 +6,7 @@
 
 namespace tree_search {
 
-    struct rotate_cap {};
+    struct capability_rotate {};
 
     struct rotate_left_tag {};
     struct rotate_right_tag {};
@@ -31,7 +31,7 @@ namespace tree_search {
     }
 
     // version for the outermost tree container
-    template <typename Tag, typename Tree, std::enable_if_t<std::is_base_of_v<rotate_cap, Tree>, int> = 0>
+    template <typename Tag, typename Tree, std::enable_if_t<std::is_base_of_v<capability_rotate, Tree>, int> = 0>
     void rotate(Tree& tree, Tag&& tag) { // universal reference
         rotate(tree.root_, std::forward<Tag>(tag));
     }
