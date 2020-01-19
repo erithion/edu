@@ -1,5 +1,6 @@
 cmake_minimum_required      ( VERSION 3.12.0 )
 
+include                     (${CMAKE_CURRENT_SOURCE_DIR}/overloading.cmake)
 include                     (${CMAKE_CURRENT_SOURCE_DIR}/tree.cmake)
 include                     (${CMAKE_CURRENT_SOURCE_DIR}/tree_avl.cmake)
 include                     (${CMAKE_CURRENT_SOURCE_DIR}/tree_redblack.cmake)
