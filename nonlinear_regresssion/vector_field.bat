@@ -1,0 +1,1 @@
+GradientVectorField2.py -i "model1.csv"  -p exponential -c1 C3 -c2 C1 -b="0:1:14 1:2:14 23"

@@ -1,0 +1,1 @@
+GaussNewtonMethod.py -i model5.csv  -p quadratic -c1 C2 -c2 C3

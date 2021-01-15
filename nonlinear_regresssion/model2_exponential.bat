@@ -1,0 +1,1 @@
+GaussNewtonMethod.py -i "model2.csv"   -p exponential -c1 C2 -c2 C7
